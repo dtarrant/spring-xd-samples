@@ -1,69 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>My forked version</title>
 <meta charset="utf-8">
 <style type="text/css">
-
 body {
-  font: 12px sans-serif;
-  text-rendering: optimizelegibility;
+	font: 12px sans-serif;
+	text-rendering: optimizelegibility;
 }
 
 .arc path {
-    stroke: #fff;
+	stroke: #fff;
 }
 
 .aggbar {
-  margin-left: 10px;
-  font: 10px sans-serif;
-  shape-rendering: crispEdges;
+	margin-left: 10px;
+	font: 10px sans-serif;
+	shape-rendering: crispEdges;
 }
 
 .aggbar rect {
-  stroke: white;
-  fill: steelblue;
+	stroke: white;
+	fill: steelblue;
 }
 
 .aggbar text.bar {
-  fill: white;
+	fill: white;
 }
-
 </style>
 <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 </head>
 <body>
-<div class="container-fluid">
-  <div class="row-fluid">
-    <div class="span5">
-      <div class="row-fluid">
-        <div class="span12">
-          <p id="piemenu"><b>Field Value Counter (Pie): </b><br><select></select></p>
-          <p id="pie"></p>
-        </div>
-      </div>
-      <div class="row-fluid">
-        <div class="span12">
-          <div id="barmenu"><b>Aggregate Counter: </b><br><select></select> </div>
-        </div>
-      </div>
-      <div class="row-fluid">
-        <div class="span12">
-          <p id="bar"></p>
-        </div>
-      </div>
-    </div>
-    <div class="span7">
-      <p id="bubblemenu"><b>Field Value Counter (Bubble): </b><br><select></select></p>
-      <p id="bubbles"></p>
-    </div>
-</div>
-<script src="js/jquery-1.10.2.min.js"></script>
-<script src="js/d3.v3.min.js"></script>
-<script src="js/fvc.js"></script>
-<script src="js/aggcount.js"></script>
-<script src="js/bootstrap.js"></script>
-<script>
+	<div class="container-fluid">
+		<div class="row-fluid">
+			<div class="span5">
+				<div class="row-fluid">
+					<div class="span12">
+						<p id="piemenu">
+							<b>Field Value Counter (Pie): </b><br>
+							<select></select>
+						</p>
+						<p id="pie"></p>
+					</div>
+				</div>
+				<div class="row-fluid">
+					<div class="span12">
+						<div id="barmenu">
+							<b>Aggregate Counter: </b><br>
+							<select></select>
+						</div>
+					</div>
+				</div>
+				<div class="row-fluid">
+					<div class="span12">
+						<p id="bar"></p>
+					</div>
+				</div>
+			</div>
+			<div class="span7">
+				<p id="bubblemenu">
+					<b>Field Value Counter (Bubble): </b><br>
+					<select></select>
+				</p>
+				<p id="bubbles"></p>
+			</div>
+		</div>
+		<script src="js/jquery-1.10.2.min.js"></script>
+		<script src="js/d3.v3.min.js"></script>
+		<script src="js/fvc.js"></script>
+		<script src="js/aggcount.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/lang_codes.js"></script>
+		<script>
+
+
+
   var baseUrl = "http://localhost:9393/metrics";
+  var ilc = invert_lang_codes(lang_codes);
+  
+  function processLanguageKeys(map) {
+	    var output = {};
+	    for (key in map) {
+            output[ilc[key.toUpperCase()]] = map[key];
+        }
+	    return output;
+  }
 
   var barchart = aggregateCountBarChart()
         .width(450)
@@ -88,32 +109,47 @@ body {
   var bubblemenu = d3.select("#bubblemenu select");
 
   function redraw() {
-    var fvc = piemenu.property("value");
-    if (fvc) {
-      d3.json(baseUrl + "/field-value-counters/" + fvc)
+    var pie = piemenu.property("value");
+    if (pie) {
+      d3.json(baseUrl + "/field-value-counters/" + pie)
       .get(function(error, json) {
         if (error) return console.warn(error);
-        var data = d3.entries(json.counts);
+        if (pie == "tweetlang") {
+			processedJson = processLanguageKeys(json.counts);
+        	var data = d3.entries(processedJson);
+      	}
+      	else {
+    	  	var data = d3.entries(json.counts);
+      	}
         data.sort(function(a,b) { return b.value - a.value; });
         d3.select("#pie")
             .datum(data)
             .call(piechart);
       });
-    }
-    fvc = bubblemenu.property("value");
+    } 
+    
+    var fvc = bubblemenu.property("value");
+
     if (fvc) {
       d3.json(baseUrl + "/field-value-counters/" + fvc)
       .get(function(error, json) {
         if (error) return console.warn(error);
-        var data = d3.entries(json.counts);
+        if (fvc == "tweetlang") {
+			processedJson = processLanguageKeys(json.counts);
+        	var data = d3.entries(processedJson);
+      	}
+      	else {
+    	  	var data = d3.entries(json.counts);
+      	}
         data.sort(function(a,b) { return b.value - a.value; });
         data.splice(500);
         d3.select("#bubbles")
             .datum(data)
             .call(bubblechart);
       });
+      
     }
-    var bar = barmenu.property("value");
+   var bar = barmenu.property("value");
     if (bar) {
       d3.json(baseUrl + "/aggregate-counters/" + bar + "?resolution=minute")
       .get(function(error, json) {
